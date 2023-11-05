@@ -4,17 +4,26 @@ const express = require("express");
 const app = express()
 const port = 3000
 
+let LAST=Date.now()/1000
+let numbers = [73, 74, 75]
 
+marked =() => {
+  if(!LAST) return true
+  if((Date.now()/1000)-LAST < 20*60*60) return true
+  return false;
+}
+
+app.get('/status', async (req, res) => {
+  res.send({ marked: marked() });
+})
 
 app.get('/mark',  async (req, res) => {
- res.send('Hello World!')
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-// (async function example() {
+  if(marked()) return res.send({ marked: true })
+  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
   let driver = await new Builder().forBrowser(Browser.FIREFOX).build();
   try {
-   let numbers = [73, 74, 75];
    for(const i of numbers) {
-    await driver.get('https://docs.google.com/forms/d/e/1FAIpQLSf0bouK1DVQdXWp8lPprbd9JyZiYlJtWMFqJx-kGEsThaGx6A/viewform');
+    await driver.get('https://docs.google.com/fms/d/e/1FAIpQLSf0bouK1DVQdXWp8lPprbd9JyZiYlJtWMFqJx-kGEsThaGx6A/viewform');
     await driver.wait(until.titleIs('Attendance'), 6000);
     await sleep(1000);
 
@@ -45,10 +54,13 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
     console.log("marked ", i);
     }
     await sleep(500)
+  } catch(e) {
+    
   } finally {
     await driver.quit();
   }
-// })();
+  LAST=Date.now()/1000;
+  res.send('Attendance Marked succesfully!')
 })
 app.listen(port, () => {
  console.log(`Example app listening on port ${port}`)
