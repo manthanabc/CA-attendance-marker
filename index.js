@@ -10,34 +10,46 @@ const bodyParser = require('body-parser');
 
 app.use(express.json());
 
+let LAST=Date.now()/1000
+let numbers = [73, 74, 75]
+
+marked =() => {
+  if(!LAST) return true
+  if((Date.now()/1000)-LAST < 20*60*60) return true
+  return false;
+}
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 app.use('/screenshots', express.static('screenshots'))
 
+app.get('/status', async (req, res) => {
+  res.send({ marked: marked() });
+})
+
 app.post('/api/url', async(req, res) => {
+  if(marked()) return res.send({ marked: true })
   const receivedUrl = req.body.url;
   const options = new chrome.Options().headless();
   let driver = await new Builder().forBrowser(Browser.CHROME).setChromeOptions(options).build();
   try {
-   let numbers = [68, 73, 74, 75];
    for(const i of numbers) {
     await driver.get(receivedUrl);
     // await driver.get('https://docs.google.com/forms/d/e/1FAIpQLSf0bouK1DVQdXWp8lPprbd9JyZiYlJtWMFqJx-kGEsThaGx6A/viewform');
     await driver.wait(until.titleIs('Attendance'), 6000);
     await sleep(1000);
 
-   await driver.actions()
+    await driver.actions()
           .sendKeys(Key.TAB, Key.TAB, Key.TAB)
           .perform()
-   await driver.actions()
+    await driver.actions()
           .sendKeys(Key.ARROW_DOWN, Key.ARROW_DOWN, Key.ARROW_DOWN)
           .perform()
     await sleep(50);
-   await driver.actions()
+    await driver.actions()
           .sendKeys(Key.ARROW_DOWN)
           .perform()
     await sleep(50);
-   await driver.actions()
+    await driver.actions()
           .sendKeys(Key.SPACE)
           .perform()
     await sleep(500)
@@ -63,10 +75,14 @@ app.post('/api/url', async(req, res) => {
     console.log("marked ", i);
     }
     await sleep(500)
+  } catch(e) {
+    
   } finally {
     await driver.quit();
   }
-});
+  LAST=Date.now()/1000;
+  res.send('Attendance Marked succesfully!')
+})
 
 app.listen(port, () => {
  console.log(`Example app listening on port ${port}`)
